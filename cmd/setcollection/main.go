@@ -10,6 +10,15 @@ import (
 	"github.com/xyproto/wallutils"
 )
 
+// isdir checks if the given path is a directory
+func isdir(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return fileInfo.IsDir()
+}
+
 // Select the wallpaper that is closest to the current monitor resolution and set that as the wallpaper
 func SelectAndSetWallpaper(wallpapers []*wallutils.Wallpaper) error {
 	// Gather a slice of filenames
@@ -51,7 +60,24 @@ func setWallpaperCollectionAction(c *cli.Context) error {
 		fmt.Print("Searching for wallpapers...")
 	}
 
-	searchResults, err := wallutils.FindWallpapers()
+	var (
+		searchResults *wallutils.SearchResults
+		err           error
+	)
+	if isdir(collectionName) {
+		path := collectionName
+		searchResults, err = wallutils.FindWallpapersAt(path)
+		if err != nil {
+			return err
+		}
+		wallpapers := searchResults.Wallpapers()
+		if searchResults.Empty() {
+			return errors.New("could not find any wallpaper collections in: " + path)
+		}
+		return SelectAndSetWallpaper(wallpapers)
+	}
+
+	searchResults, err = wallutils.FindWallpapers()
 	if err != nil {
 		return err
 	}
@@ -61,7 +87,7 @@ func setWallpaperCollectionAction(c *cli.Context) error {
 	simpleTimedWallpapers := searchResults.SimpleTimedWallpapers()
 
 	if searchResults.Empty() {
-		return errors.New("could not find any wallpapers on the system")
+		return errors.New("could not find any wallpaper collections on the system")
 	}
 
 	if verbose {
