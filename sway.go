@@ -17,7 +17,8 @@ func (s *Sway) Name() string {
 }
 
 func (s *Sway) ExecutablesExists() bool {
-	return which("sway") != "" && which("swaymsg") != ""
+	// Check if sway and swaymsg is available
+	return which("sway") != "" && which("swaymsg") != "" // || which("swaybg") != "")
 }
 
 func (s *Sway) Running() bool {
@@ -52,10 +53,19 @@ func (s *Sway) SetWallpaper(imageFilename string) error {
 		mode = "fill"
 	case "zoom", "zoomed", "stretched":
 		mode = "stretch"
+	case "fit", "solid_color":
+		break
 	default:
 		// Invalid and unrecognized desktop wallpaper mode
 		return fmt.Errorf("invalid desktop wallpaper mode for Sway: %s", mode)
 	}
 
+	// Use swaybg, if it is available
+	//if which("swaybg") != "" {
+		// swaybg just keeps running, though
+		//return run("swaybg", []string{"-o *", "-i " + imageFilename, "-m " + mode}, s.verbose)
+	//}
+
 	return run("swaymsg", []string{"output * bg " + imageFilename + " " + mode}, s.verbose)
+	}
 }
